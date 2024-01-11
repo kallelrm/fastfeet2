@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DELIVERYMAN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  lastname  String
+  email     String   @unique
+  cpf       String   @unique
+  password  String
+  phone     String
+  createdAt DateTime @default(now()) @map("created_at")
+  role      Role?    @default(DELIVERYMAN)
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Recipient {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String
+  street    String
+  number    String
+  city      String
+  zipcode   String
+  state     String
+  latitude  Decimal
+  longitude Decimal
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @map("updated_at")
+
+  orders        Order[]
+  notifications Notification[]
+
+  @@map("recipients")
+}
+
+model Order {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  recipientId  String    @map("recipient_id")
+  attachmentId String?   @map("attachment_id")
+  name         String
+  status       String    @default("Aguardando")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime? @map("updated_at")
+  deliveredAt  DateTime? @map("delivered_at")
+  returnedAt   DateTime? @map("returned_at")
+  retiredAt    DateTime? @map("retired_at")
+  postedAt     DateTime? @map("posted_at")
+
+  user       User        @relation(fields: [userId], references: [id])
+  recipient  Recipient   @relation(fields: [recipientId], references: [id])
+  attachment Attachment? @relation(fields: [attachmentId], references: [id])
+
+  @@map("orders")
+}
+
+model Attachment {
+  id      String  @id @default(uuid())
+  title   String
+  url     String
+  orderId String? @unique @map("order_id")
+  order   Order[]
+
+  @@map("attachments")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  recipientId String    @unique @map("recipient_id")
+  title       String
+  content     String
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  recipient Recipient @relation(fields: [recipientId], references: [id])
+
+  @@map("notifications")
+}
